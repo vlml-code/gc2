@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>GameVote Rooms</title>
+  <link rel="stylesheet" href="styles.css" />
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/microsoft-signalr/7.0.5/signalr.min.js" defer></script>
+  <script src="app.js" defer></script>
+</head>
+<body>
+  <div class="app">
+    <header class="hero">
+      <div>
+        <p class="eyebrow">GameVote</p>
+        <h1>Pick the next game together.</h1>
+        <p class="subtitle">Create a room, invite friends, and vote in real-time.</p>
+      </div>
+      <div class="cta">
+        <button id="create-room" class="primary">Create room</button>
+        <div class="code-input">
+          <input id="room-code-input" type="text" placeholder="Enter code" maxlength="6" />
+          <button id="join-room" class="ghost">Join</button>
+        </div>
+        <p id="room-link" class="link"></p>
+      </div>
+    </header>
+
+    <section class="card">
+      <div class="card-header">
+        <h2>Game list</h2>
+        <button id="toggle-edit" class="ghost">Edit list</button>
+      </div>
+      <div id="game-list" class="pill-list"></div>
+      <div id="edit-panel" class="edit-panel hidden">
+        <textarea id="game-editor" placeholder="Add one game per line"></textarea>
+        <div class="actions">
+          <button id="save-games" class="primary">Save games</button>
+          <button id="cancel-edit" class="ghost">Cancel</button>
+        </div>
+      </div>
+    </section>
+
+    <section id="room-panel" class="card hidden">
+      <div class="card-header">
+        <div>
+          <h2>Room <span id="room-code"></span></h2>
+          <p class="muted">Share the invite link to get everyone in.</p>
+        </div>
+        <button id="copy-link" class="ghost">Copy invite link</button>
+      </div>
+
+      <div class="room-grid">
+        <div class="panel">
+          <h3>Your name</h3>
+          <div class="join-form">
+            <input id="name-input" type="text" placeholder="Type your name" />
+            <button id="join-room-confirm" class="primary">Join room</button>
+          </div>
+          <p id="join-status" class="muted"></p>
+        </div>
+
+        <div class="panel">
+          <h3>Vote</h3>
+          <div id="vote-options" class="vote-options"></div>
+          <button id="random-vote" class="ghost">Vote random</button>
+        </div>
+
+        <div class="panel">
+          <h3>Players</h3>
+          <ul id="participant-list" class="participants"></ul>
+        </div>
+
+        <div class="panel result">
+          <h3>Result</h3>
+          <p id="result-text" class="result-text">Waiting for everyone to vote.</p>
+          <button id="start-button" class="primary" disabled>Start</button>
+        </div>
+      </div>
+    </section>
+  </div>
+</body>
+</html>

@@ -1,0 +1,82 @@
+@page "/"
+@inject GamesStore GamesStore
+@inject RoomManager RoomManager
+@inject NavigationManager NavigationManager
+@inject IJSRuntime JS
+
+<PageTitle>Game Choice Lobby</PageTitle>
+
+<div class="grid">
+    <section class="card">
+        <h1>Game list</h1>
+        <p>Keep your shared list of game titles up to date. Each title should be on its own line.</p>
+
+        <label class="field">
+            <span>Editable list</span>
+            <textarea @bind="_gameText" rows="10" placeholder="Enter one game per line"></textarea>
+        </label>
+
+        <div class="button-row">
+            <button class="button" @onclick="SaveGames">Save list</button>
+            <span class="status">@_saveStatus</span>
+        </div>
+    </section>
+
+    <section class="card">
+        <h1>Create a room</h1>
+        <p>Invite your friends to vote. A unique link will be generated for each room.</p>
+
+        <div class="button-row">
+            <button class="button primary" @onclick="CreateRoom">Create room</button>
+        </div>
+
+        @if (!string.IsNullOrWhiteSpace(_roomLink))
+        {
+            <div class="notice">
+                <strong>Share this link</strong>
+                <div class="link-box">
+                    <a href="@_roomLink">@_roomLink</a>
+                    <button class="button subtle" @onclick="CopyLink">Copy</button>
+                </div>
+            </div>
+        }
+    </section>
+</div>
+
+@code {
+    private string _gameText = string.Empty;
+    private string _saveStatus = string.Empty;
+    private string _roomLink = string.Empty;
+
+    protected override async Task OnInitializedAsync()
+    {
+        var games = await GamesStore.GetGamesAsync();
+        _gameText = string.Join(Environment.NewLine, games);
+    }
+
+    private async Task SaveGames()
+    {
+        var lines = _gameText
+            .Split(Environment.NewLine, StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .ToList();
+
+        await GamesStore.SaveGamesAsync(lines);
+        _saveStatus = $"Saved {lines.Count} titles at {DateTime.Now:t}.";
+    }
+
+    private async Task CreateRoom()
+    {
+        var games = await GamesStore.GetGamesAsync();
+        var roomCode = RoomManager.CreateRoom(games);
+        _roomLink = NavigationManager.ToAbsoluteUri($"/room/{roomCode}").ToString();
+    }
+
+    private async Task CopyLink()
+    {
+        if (!string.IsNullOrWhiteSpace(_roomLink))
+        {
+            await JS.InvokeVoidAsync("navigator.clipboard.writeText", _roomLink);
+        }
+    }
+}

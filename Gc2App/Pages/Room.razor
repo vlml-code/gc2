@@ -1,0 +1,190 @@
+@page "/room/{Code}"
+@implements IDisposable
+@inject RoomManager RoomManager
+@inject ParticipantSession Session
+
+<PageTitle>Room @Code</PageTitle>
+
+@if (_room is null)
+{
+    <section class="card">
+        <h1>Room not found</h1>
+        <p>This room link is invalid or expired.</p>
+        <a class="button" href="/">Return to lobby</a>
+    </section>
+}
+else
+{
+    <div class="grid">
+        <section class="card">
+            <h1>Room @Code</h1>
+            <p class="muted">Share this link with friends to join and vote.</p>
+
+            @if (!_isJoined)
+            {
+                <label class="field">
+                    <span>Your display name</span>
+                    <input @bind="_displayName" placeholder="Person A" />
+                </label>
+                <button class="button primary" @onclick="JoinRoom" disabled="@string.IsNullOrWhiteSpace(_displayName)">Join room</button>
+            }
+            else
+            {
+                <div class="pill">Joined as <strong>@Session.Name</strong></div>
+            }
+
+            <div class="section">
+                <h2>Players</h2>
+                <ul class="list">
+                    @foreach (var participant in _room.Participants)
+                    {
+                        <li>
+                            <span>@participant.Name</span>
+                            <span class="status-chip">@participant.Status</span>
+                        </li>
+                    }
+                </ul>
+            </div>
+        </section>
+
+        <section class="card">
+            <h1>Vote for a game</h1>
+            <p>Each player can vote once. You can also vote for Random to let fate decide.</p>
+
+            @if (!_isJoined)
+            {
+                <p class="muted">Join the room to cast your vote.</p>
+            }
+            else if (_room.Started)
+            {
+                <div class="result">
+                    <h2>Chosen game</h2>
+                    <div class="result-title">@_room.SelectedGame</div>
+                    <p>Everyone sees the same result once the room starts.</p>
+                </div>
+            }
+            else
+            {
+                <div class="vote-grid">
+                    @foreach (var option in _room.VoteOptions)
+                    {
+                        <label class="option @GetSelectedClass(option)">
+                            <input type="radio" name="vote" value="@option" disabled="@_hasVoted" @onchange="() => CastVote(option)" />
+                            <span>@option</span>
+                        </label>
+                    }
+                </div>
+
+                <div class="section">
+                    <button class="button primary" @onclick="StartRoom" disabled="@(!_room.AllVoted)">Start</button>
+                    <span class="status">@_voteStatus</span>
+                </div>
+            }
+        </section>
+    </div>
+}
+
+@code {
+    [Parameter] public string Code { get; set; } = string.Empty;
+
+    private RoomSnapshot? _room;
+    private string _displayName = string.Empty;
+    private bool _isJoined;
+    private bool _hasVoted;
+    private string _voteStatus = string.Empty;
+
+    protected override void OnInitialized()
+    {
+        RoomManager.RoomUpdated += HandleRoomUpdated;
+        LoadRoom();
+    }
+
+    private void LoadRoom()
+    {
+        _room = RoomManager.GetRoom(Code);
+        if (_room is null)
+        {
+            return;
+        }
+
+        if (!string.IsNullOrWhiteSpace(Session.Name))
+        {
+            _isJoined = true;
+            _hasVoted = _room.Participants.Any(p => p.Id == Session.Id && p.HasVoted);
+        }
+    }
+
+    private void HandleRoomUpdated(string code)
+    {
+        if (!string.Equals(code, Code, StringComparison.OrdinalIgnoreCase))
+        {
+            return;
+        }
+
+        InvokeAsync(() =>
+        {
+            LoadRoom();
+            StateHasChanged();
+        });
+    }
+
+    private void JoinRoom()
+    {
+        if (_room is null || string.IsNullOrWhiteSpace(_displayName))
+        {
+            return;
+        }
+
+        Session.Name = _displayName.Trim();
+        RoomManager.JoinRoom(Code, Session.Id, Session.Name);
+        _isJoined = true;
+        _voteStatus = string.Empty;
+    }
+
+    private void CastVote(string option)
+    {
+        if (_room is null || _hasVoted)
+        {
+            return;
+        }
+
+        RoomManager.CastVote(Code, Session.Id, option);
+        _hasVoted = true;
+        _voteStatus = "Vote submitted.";
+    }
+
+    private void StartRoom()
+    {
+        if (_room is null)
+        {
+            return;
+        }
+
+        var selected = RoomManager.StartRoom(Code);
+        if (!string.IsNullOrWhiteSpace(selected))
+        {
+            _voteStatus = $"Started with {selected}.";
+        }
+    }
+
+    private string GetSelectedClass(string option)
+    {
+        if (_room is null)
+        {
+            return string.Empty;
+        }
+
+        var participant = _room.Participants.FirstOrDefault(p => p.Id == Session.Id);
+        if (participant?.Vote == option)
+        {
+            return "selected";
+        }
+
+        return string.Empty;
+    }
+
+    public void Dispose()
+    {
+        RoomManager.RoomUpdated -= HandleRoomUpdated;
+    }
+}

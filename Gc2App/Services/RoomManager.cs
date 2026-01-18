@@ -4,6 +4,37 @@ public class RoomManager
 {
     private readonly object _lock = new();
     private readonly Dictionary<string, Room> _rooms = new(StringComparer.OrdinalIgnoreCase);
+    private static readonly string[] WaitingStatuses =
+    [
+        "Making life choices",
+        "Contemplating destiny",
+        "Questioning life",
+        "Counting imaginary votes",
+        "Negotiating with fate",
+        "Consulting the stars",
+        "Summoning courage",
+        "Deliberating with a snack",
+        "Staring into the void",
+        "Rolling moral dice",
+        "Brewing a decision",
+        "Consulting the council",
+        "Plotting world peace",
+        "Refilling enthusiasm",
+        "Humming the anthem",
+        "Asking the magic eight ball",
+        "Drafting a manifesto",
+        "Finding the right vibe",
+        "Polishing the crown",
+        "Choosing chaos",
+        "Debating with a houseplant",
+        "Rewriting the constitution",
+        "Practicing dramatic pauses",
+        "Recalculating destiny",
+        "Reading tea leaves",
+        "Waiting for inspiration",
+        "Scheduling a revelation",
+        "Aligning the planets"
+    ];
 
     public event Action<string>? RoomUpdated;
 
@@ -195,7 +226,7 @@ public class RoomManager
                     participant.Name,
                     participant.HasVoted,
                     participant.Vote,
-                    participant.HasVoted ? "Already Voted" : "Waiting"))
+                    participant.HasVoted ? "Already Voted" : WaitingStatuses[Random.Shared.Next(WaitingStatuses.Length)]))
                 .ToList();
 
             var voteOptions = Games.Concat([RandomVote]).ToList();

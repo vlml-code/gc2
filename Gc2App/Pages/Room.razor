@@ -2,6 +2,7 @@
 @implements IDisposable
 @inject RoomManager RoomManager
 @inject ParticipantSession Session
+@inject IJSRuntime JS
 
 <PageTitle>Room @Code</PageTitle>
 
@@ -27,11 +28,16 @@ else
                     <span>Your display name</span>
                     <input @bind="_displayName" placeholder="Person A" />
                 </label>
-                <button class="button primary" @onclick="JoinRoom" disabled="@string.IsNullOrWhiteSpace(_displayName)">Join room</button>
+                <button class="button primary" @onclick="JoinRoomAsync" disabled="@string.IsNullOrWhiteSpace(_displayName)">Join room</button>
             }
             else
             {
                 <div class="pill">Joined as <strong>@Session.Name</strong></div>
+                <label class="field">
+                    <span>Edit your display name</span>
+                    <input @bind="_displayName" placeholder="Person A" />
+                </label>
+                <button class="button subtle" @onclick="UpdateNameAsync" disabled="@string.IsNullOrWhiteSpace(_displayName)">Update name</button>
             }
 
             <div class="section">
@@ -89,15 +95,19 @@ else
                     @foreach (var option in _room.VoteOptions)
                     {
                         <label class="option @GetSelectedClass(option)">
-                            <input type="radio" name="vote" value="@option" disabled="@_hasVoted" @onchange="() => CastVote(option)" />
+                            <input type="radio" name="vote" value="@option" disabled="@_hasVoted" @onchange="() => SelectVote(option)" />
                             <span>@option</span>
                         </label>
                     }
                 </div>
 
                 <div class="section">
-                    <button class="button primary" @onclick="StartRoom" disabled="@(!_room.AllVoted)">Start</button>
+                    <button class="button primary" @onclick="ConfirmVote" disabled="@(!_canConfirmVote)">Confirm vote</button>
                     <span class="status">@_voteStatus</span>
+                </div>
+
+                <div class="section">
+                    <button class="button primary" @onclick="StartRoom" disabled="@(!_room.AllVoted)">Start</button>
                 </div>
             }
         </section>
@@ -112,11 +122,37 @@ else
     private bool _isJoined;
     private bool _hasVoted;
     private string _voteStatus = string.Empty;
+    private string? _selectedVote;
+    private bool _hasLoadedCookie;
+
+    private const string NameCookieKey = "gc2-display-name";
+    private const int NameCookieDays = 90;
+
+    private bool _canConfirmVote => !_hasVoted && !string.IsNullOrWhiteSpace(_selectedVote);
 
     protected override void OnInitialized()
     {
         RoomManager.RoomUpdated += HandleRoomUpdated;
         LoadRoom();
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!firstRender || _hasLoadedCookie)
+        {
+            return;
+        }
+
+        _hasLoadedCookie = true;
+        var storedName = await JS.InvokeAsync<string>("gc2Cookies.get", NameCookieKey);
+        if (!string.IsNullOrWhiteSpace(storedName))
+        {
+            _displayName = storedName;
+            Session.Name = storedName;
+            JoinRoomWithStoredName();
+            LoadRoom();
+            StateHasChanged();
+        }
     }
 
     private void LoadRoom()
@@ -130,7 +166,10 @@ else
         if (!string.IsNullOrWhiteSpace(Session.Name))
         {
             _isJoined = true;
-            _hasVoted = _room.Participants.Any(p => p.Id == Session.Id && p.HasVoted);
+            var participant = _room.Participants.FirstOrDefault(p => p.Id == Session.Id);
+            _hasVoted = participant?.HasVoted ?? false;
+            _selectedVote = participant?.Vote ?? _selectedVote;
+            _displayName = Session.Name ?? _displayName;
         }
     }
 
@@ -148,7 +187,7 @@ else
         });
     }
 
-    private void JoinRoom()
+    private async Task JoinRoomAsync()
     {
         if (_room is null || string.IsNullOrWhiteSpace(_displayName))
         {
@@ -157,18 +196,54 @@ else
 
         Session.Name = _displayName.Trim();
         RoomManager.JoinRoom(Code, Session.Id, Session.Name);
+        await JS.InvokeVoidAsync("gc2Cookies.set", NameCookieKey, Session.Name, NameCookieDays);
         _isJoined = true;
         _voteStatus = string.Empty;
     }
 
-    private void CastVote(string option)
+    private void JoinRoomWithStoredName()
+    {
+        if (_room is null || string.IsNullOrWhiteSpace(Session.Name))
+        {
+            return;
+        }
+
+        RoomManager.JoinRoom(Code, Session.Id, Session.Name);
+        _isJoined = true;
+    }
+
+    private async Task UpdateNameAsync()
+    {
+        if (_room is null || string.IsNullOrWhiteSpace(_displayName))
+        {
+            return;
+        }
+
+        Session.Name = _displayName.Trim();
+        RoomManager.JoinRoom(Code, Session.Id, Session.Name);
+        await JS.InvokeVoidAsync("gc2Cookies.set", NameCookieKey, Session.Name, NameCookieDays);
+        _voteStatus = "Name updated.";
+    }
+
+    private void SelectVote(string option)
     {
         if (_room is null || _hasVoted)
         {
             return;
         }
 
-        RoomManager.CastVote(Code, Session.Id, option);
+        _selectedVote = option;
+        _voteStatus = "Vote ready to submit.";
+    }
+
+    private void ConfirmVote()
+    {
+        if (_room is null || _hasVoted || string.IsNullOrWhiteSpace(_selectedVote))
+        {
+            return;
+        }
+
+        RoomManager.CastVote(Code, Session.Id, _selectedVote);
         _hasVoted = true;
         _voteStatus = "Vote submitted.";
     }
@@ -196,6 +271,11 @@ else
 
         var participant = _room.Participants.FirstOrDefault(p => p.Id == Session.Id);
         if (participant?.Vote == option)
+        {
+            return "selected";
+        }
+
+        if (!_hasVoted && string.Equals(_selectedVote, option, StringComparison.OrdinalIgnoreCase))
         {
             return "selected";
         }

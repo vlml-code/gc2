@@ -4,12 +4,18 @@
 @inject NavigationManager NavigationManager
 @inject IJSRuntime JS
 
-<PageTitle>Game Choice Lobby</PageTitle>
+<PageTitle>Democracy Arcade Lobby</PageTitle>
 
 <div class="grid">
-    <section class="card">
-        <h1>Game list</h1>
-        <p>Keep your shared list of game titles up to date. Each title should be on its own line.</p>
+    <section class="card spotlight">
+        <div class="hero">
+            <span class="badge">Democracy Dispatch</span>
+            <h1>Democracy will decide what we all play next today!</h1>
+            <p class="muted">Give the people a ballot of games and watch freedom pick the winner.</p>
+        </div>
+
+        <h2>Game roster</h2>
+        <p>Keep the shared list of titles up to date. Each title should be on its own line.</p>
 
         <label class="field">
             <span>Editable list</span>
@@ -23,8 +29,8 @@
     </section>
 
     <section class="card">
-        <h1>Create a room</h1>
-        <p>Invite your friends to vote. A unique link will be generated for each room.</p>
+        <h2>Launch a voting room</h2>
+        <p>Invite your fellow citizens to vote. A unique link will be generated for each room.</p>
 
         <div class="button-row">
             <button class="button primary" @onclick="CreateRoom">Create room</button>
@@ -33,7 +39,7 @@
         @if (!string.IsNullOrWhiteSpace(_roomLink))
         {
             <div class="notice">
-                <strong>Share this link</strong>
+                <strong>Share this link with the electorate</strong>
                 <div class="link-box">
                     <a href="@_roomLink">@_roomLink</a>
                     <button class="button subtle" @onclick="CopyLink">Copy</button>

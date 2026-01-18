@@ -1,13 +1,15 @@
 :root {
-    color-scheme: light;
-    --background: #f4f6fb;
-    --card: #ffffff;
-    --text: #1d2135;
-    --muted: #5d647b;
-    --primary: #5b7cfa;
-    --primary-dark: #3c5ae4;
-    --border: #e1e6f2;
-    --shadow: 0 12px 30px rgba(15, 23, 42, 0.08);
+    color-scheme: dark;
+    --background: #0b0f1e;
+    --card: rgba(20, 26, 44, 0.92);
+    --text: #f3f6ff;
+    --muted: #9aa4c5;
+    --primary: #7c5cff;
+    --primary-dark: #5c3df3;
+    --border: rgba(126, 143, 188, 0.2);
+    --shadow: 0 20px 60px rgba(4, 6, 16, 0.65);
+    --glow: 0 0 35px rgba(124, 92, 255, 0.35);
+    --accent: #00f0ff;
 }
 
 * {
@@ -17,7 +19,9 @@
 body {
     margin: 0;
     font-family: "Segoe UI", system-ui, -apple-system, sans-serif;
-    background: var(--background);
+    background: radial-gradient(circle at top left, rgba(124, 92, 255, 0.2), transparent 45%),
+        radial-gradient(circle at 70% 10%, rgba(0, 240, 255, 0.12), transparent 40%),
+        var(--background);
     color: var(--text);
 }
 
@@ -37,9 +41,10 @@ a {
     justify-content: space-between;
     align-items: center;
     padding: 1.5rem 2.5rem;
-    background: var(--card);
+    background: rgba(12, 16, 29, 0.85);
     border-bottom: 1px solid var(--border);
     box-shadow: var(--shadow);
+    backdrop-filter: blur(12px);
 }
 
 .brand {
@@ -55,10 +60,11 @@ a {
     width: 40px;
     height: 40px;
     border-radius: 12px;
-    background: linear-gradient(135deg, var(--primary), #7aa6ff);
+    background: linear-gradient(135deg, var(--primary), var(--accent));
     color: white;
     font-weight: 700;
     letter-spacing: 0.1em;
+    box-shadow: var(--glow);
 }
 
 .brand-subtitle {
@@ -91,6 +97,49 @@ nav a {
     border: 1px solid var(--border);
 }
 
+.card.spotlight {
+    position: relative;
+    overflow: hidden;
+}
+
+.card.spotlight::after {
+    content: "";
+    position: absolute;
+    inset: -40% 20% auto auto;
+    width: 240px;
+    height: 240px;
+    background: radial-gradient(circle, rgba(124, 92, 255, 0.35), transparent 70%);
+    opacity: 0.8;
+    pointer-events: none;
+}
+
+.hero {
+    display: grid;
+    gap: 0.6rem;
+    margin-bottom: 1.5rem;
+}
+
+.badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    width: fit-content;
+    padding: 0.25rem 0.75rem;
+    border-radius: 999px;
+    font-size: 0.75rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    background: rgba(124, 92, 255, 0.18);
+    color: #d8d2ff;
+    border: 1px solid rgba(124, 92, 255, 0.4);
+}
+
+.badge.accent {
+    background: rgba(0, 240, 255, 0.16);
+    color: #d4fbff;
+    border-color: rgba(0, 240, 255, 0.4);
+}
+
 .field {
     display: flex;
     flex-direction: column;
@@ -104,7 +153,8 @@ textarea {
     border-radius: 12px;
     border: 1px solid var(--border);
     padding: 0.75rem 1rem;
-    background: #f9fafc;
+    background: rgba(8, 12, 24, 0.7);
+    color: var(--text);
 }
 
 textarea {
@@ -124,13 +174,15 @@ textarea {
     padding: 0.7rem 1.5rem;
     font-weight: 600;
     cursor: pointer;
-    background: #eef1f9;
+    background: rgba(124, 92, 255, 0.15);
     color: var(--text);
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
 }
 
 .button.primary {
     background: var(--primary);
     color: white;
+    box-shadow: var(--glow);
 }
 
 .button.primary:disabled {
@@ -143,6 +195,11 @@ textarea {
     border: 1px solid var(--border);
 }
 
+.button:hover:not(:disabled) {
+    transform: translateY(-1px);
+    box-shadow: var(--glow);
+}
+
 .status {
     color: var(--muted);
     font-size: 0.9rem;
@@ -151,8 +208,9 @@ textarea {
 .notice {
     margin-top: 1.5rem;
     padding: 1rem;
-    background: #f1f5ff;
+    background: rgba(124, 92, 255, 0.12);
     border-radius: 14px;
+    border: 1px solid rgba(124, 92, 255, 0.35);
 }
 
 .link-box {
@@ -185,14 +243,14 @@ textarea {
     justify-content: space-between;
     align-items: center;
     padding: 0.6rem 0.8rem;
-    background: #f8f9fd;
+    background: rgba(11, 15, 30, 0.7);
     border-radius: 12px;
 }
 
 .status-chip {
     font-size: 0.75rem;
     color: var(--muted);
-    background: #e9edf7;
+    background: rgba(124, 92, 255, 0.12);
     border-radius: 999px;
     padding: 0.2rem 0.6rem;
 }
@@ -209,37 +267,87 @@ textarea {
     padding: 0.75rem 1rem;
     border-radius: 14px;
     border: 1px solid var(--border);
-    background: #f8faff;
+    background: rgba(10, 14, 26, 0.7);
     cursor: pointer;
 }
 
 .option.selected {
     border-color: var(--primary);
-    background: rgba(91, 124, 250, 0.1);
+    background: rgba(124, 92, 255, 0.18);
+    box-shadow: var(--glow);
 }
 
 .pill {
     display: inline-flex;
     align-items: center;
-    background: #ecf1ff;
-    color: var(--primary-dark);
+    background: rgba(124, 92, 255, 0.16);
+    color: #d9d3ff;
     border-radius: 999px;
     padding: 0.35rem 0.85rem;
     font-size: 0.85rem;
     margin-top: 0.5rem;
 }
 
-.result {
-    text-align: center;
+.result-panel {
+    display: grid;
+    gap: 1.5rem;
     padding: 1.5rem;
-    background: #f1f5ff;
-    border-radius: 16px;
+    background: linear-gradient(135deg, rgba(124, 92, 255, 0.18), rgba(0, 240, 255, 0.08));
+    border-radius: 18px;
+    border: 1px solid rgba(124, 92, 255, 0.4);
+    box-shadow: var(--glow);
 }
 
-.result-title {
-    font-size: 1.75rem;
-    font-weight: 700;
-    margin-top: 0.5rem;
+.result-header h2 {
+    font-size: 2rem;
+    margin: 0.4rem 0;
+}
+
+.vote-results h3 {
+    margin: 0 0 0.75rem;
+}
+
+.vote-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: grid;
+    gap: 0.65rem;
+}
+
+.vote-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.75rem 1rem;
+    border-radius: 14px;
+    background: rgba(9, 13, 25, 0.75);
+    border: 1px solid rgba(124, 92, 255, 0.2);
+}
+
+.vote-person {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    flex-wrap: wrap;
+}
+
+.vote-name {
+    font-weight: 600;
+}
+
+.vote-pill {
+    font-size: 0.75rem;
+    padding: 0.2rem 0.6rem;
+    border-radius: 999px;
+    background: rgba(0, 240, 255, 0.16);
+    color: #d4fbff;
+    border: 1px solid rgba(0, 240, 255, 0.35);
+}
+
+.vote-status {
+    font-size: 0.75rem;
+    color: var(--muted);
 }
 
 .muted {

@@ -17,8 +17,9 @@ else
 {
     <div class="grid">
         <section class="card">
+            <span class="badge">Freedom Hall</span>
             <h1>Room @Code</h1>
-            <p class="muted">Share this link with friends to join and vote.</p>
+            <p class="muted">Democracy is in session. Share this link with friends to join and vote.</p>
 
             @if (!_isJoined)
             {
@@ -48,6 +49,7 @@ else
         </section>
 
         <section class="card">
+            <span class="badge">Ballot Box</span>
             <h1>Vote for a game</h1>
             <p>Each player can vote once. You can also vote for Random to let fate decide.</p>
 
@@ -57,10 +59,28 @@ else
             }
             else if (_room.Started)
             {
-                <div class="result">
-                    <h2>Chosen game</h2>
-                    <div class="result-title">@_room.SelectedGame</div>
-                    <p>Everyone sees the same result once the room starts.</p>
+                var selectedVoters = GetSelectedVoters();
+                <div class="result-panel">
+                    <div class="result-header">
+                        <span class="badge accent">Democracy decree</span>
+                        <h2>@_room.SelectedGame</h2>
+                        <p class="muted">@GetResultTagline(selectedVoters)</p>
+                    </div>
+                    <div class="vote-results">
+                        <h3>How the citizens voted</h3>
+                        <ul class="vote-list">
+                            @foreach (var participant in _room.Participants)
+                            {
+                                <li class="vote-row">
+                                    <div class="vote-person">
+                                        <span class="vote-name">@participant.Name</span>
+                                        <span class="vote-pill">@GetVoteDisplay(participant)</span>
+                                    </div>
+                                    <span class="vote-status">@participant.Status</span>
+                                </li>
+                            }
+                        </ul>
+                    </div>
                 </div>
             }
             else
@@ -181,6 +201,40 @@ else
         }
 
         return string.Empty;
+    }
+
+    private IReadOnlyList<ParticipantSnapshot> GetSelectedVoters()
+    {
+        if (_room?.SelectedGame is null)
+        {
+            return Array.Empty<ParticipantSnapshot>();
+        }
+
+        return _room.Participants
+            .Where(participant => string.Equals(participant.Vote, _room.SelectedGame, StringComparison.OrdinalIgnoreCase))
+            .ToList();
+    }
+
+    private string GetResultTagline(IReadOnlyList<ParticipantSnapshot> voters)
+    {
+        if (_room?.SelectedGame is null)
+        {
+            return string.Empty;
+        }
+
+        if (voters.Count == 0)
+        {
+            return "Selected by the Random mandate — liberty for the unexpected.";
+        }
+
+        var voterNames = string.Join(", ", voters.Select(voter => voter.Name));
+        var voterLabel = voters.Count == 1 ? "player" : "players";
+        return $"Chosen by {voters.Count} {voterLabel}: {voterNames}.";
+    }
+
+    private static string GetVoteDisplay(ParticipantSnapshot participant)
+    {
+        return string.IsNullOrWhiteSpace(participant.Vote) ? "No vote" : participant.Vote!;
     }
 
     public void Dispose()
